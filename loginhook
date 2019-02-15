@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ -d $HOME/.login.d ]; then
+    for script in $HOME/.login.d/*; do
+        . "$script"
+    done
+fi
