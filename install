@@ -2,6 +2,30 @@
 
 set -e
 
-mkdir -p $HOME/.login.d
+mkdir -p "$HOME"/.login.d
 
-sudo defaults write com.apple.loginwindow LoginHook "$HOME"/bin/loginhook
+plist="$HOME"/Library/LaunchAgents/macos-login-hook.login.d.plist
+test -e "$plist" && { echo "$0: $plist exists, not overwriting" >&2; exit 2; }
+
+script=$HOME/bin/loginhook
+test -x "$script" || { echo "$0: $script is not executable, aborting" >&2; exit 3; }
+
+# Substantially based on https://stackoverflow.com/a/22872222/874188
+cat <<: >"$plist"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>macos-login-hook.login.d</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$script</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+:
+
+launchctl load "$plist"
