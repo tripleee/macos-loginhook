@@ -12,7 +12,8 @@ mkdir -p ~/.login.d "$plistdir" "$bindir"
 test -e "$plist" && { echo "$0: $plist exists, not overwriting" >&2; exit 2; }
 
 script="$bindir"/loginhook
-test -x "$script" || { echo "$0: $script is not executable, aborting" >&2; exit 3; }
+scrsrc=./loginhook
+test -x "$scrsrc" || { echo "$0: $scrsrc is not executable, aborting" >&2; exit 3; }
 
 # Substantially based on https://stackoverflow.com/a/22872222/874188
 cat <<: >"$plist"
@@ -33,3 +34,5 @@ cat <<: >"$plist"
 :
 
 launchctl load "$plist"
+
+cp -p esc-key ~/.login.d/
