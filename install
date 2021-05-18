@@ -36,3 +36,5 @@ cat <<: >"$plist"
 launchctl load "$plist"
 
 cp -p esc-key ~/.login.d/
+
+./loginhook
