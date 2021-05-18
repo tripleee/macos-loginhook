@@ -15,6 +15,8 @@ script="$bindir"/loginhook
 scrsrc=./loginhook
 test -x "$scrsrc" || { echo "$0: $scrsrc is not executable, aborting" >&2; exit 3; }
 
+cp -p "$scrsrc" "$script"
+
 # Substantially based on https://stackoverflow.com/a/22872222/874188
 cat <<: >"$plist"
 <?xml version="1.0" encoding="UTF-8"?>
