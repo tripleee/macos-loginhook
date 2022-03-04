@@ -37,6 +37,6 @@ cat <<: >"$plist"
 
 launchctl load "$plist"
 
-cp -p esc-key ~/.login.d/
+cp -p esc-key env ~/.login.d/
 
 ./loginhook
