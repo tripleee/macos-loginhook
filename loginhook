@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -d ~/.login.d ]; then
-    for script in ~/.login.d/*; do
+    for script in ~/.login.d/*[!~]; do
         . "$script"
     done
 fi
