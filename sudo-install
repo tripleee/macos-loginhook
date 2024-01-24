@@ -1,0 +1,34 @@
+#!/bin/sh
+
+plistdir=/Library/LaunchDaemons
+
+test -w "$plistdir" || {
+    echo "$0: Need write access to $plistdir" >&2
+    exit 1
+}
+
+test -e "$plistdir"/userkeymapping.plist && {
+    echo "$0: $plistdir/userkeymapping.plist already exists -- aborting" >&2
+    exit 2
+}
+
+cat<<: >"$plistdir"/userkeymapping.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>userkeymapping</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>hidutil</string>
+        <string>property</string>
+        <string>--set</string>
+        <string>{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000064,"HIDKeyboardModifierMappingDst":0x700000029}]}</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+:
+launchctl load "$plistdir"/userkeymapping.plist
