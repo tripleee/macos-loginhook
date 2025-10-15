@@ -1,7 +1,11 @@
 #!/bin/sh
 
+exec >>~/.loginhook.log 2>&1
+date +"$0: %c"
+
 if [ -d ~/.login.d ]; then
     for script in ~/.login.d/*[!~]; do
-        . "$script"
+        echo "Attempting to run $script" >&2
+        . "$script" || { echo "$script failed: $?" >&2; continue; }
     done
 fi
