@@ -2,41 +2,64 @@
 
 set -e
 
+warn () {
+    echo "$0: $*" >&2
+}
+die () {
+    local rc=$1
+    shift
+    warn "$*"
+    exit "$rc"
+}
+
 plistdir=~/Library/LaunchAgents
-plist="$plistdir"/macos-login-hook.login.d.plist
+plist="$plistdir"/com.local.loginhook.plist
 
 bindir=~/bin
 
 mkdir -p ~/.login.d "$plistdir" "$bindir"
 
-test -e "$plist" && { echo "$0: $plist exists, not overwriting" >&2; exit 2; }
+test -e "$plist" && die 2 "$plist exists, not overwriting"
 
 script="$bindir"/loginhook
 scrsrc=./loginhook
-test -x "$scrsrc" || { echo "$0: $scrsrc is not executable, aborting" >&2; exit 3; }
+test -x "$scrsrc" || die 3 "$scrsrc is not executable, aborting"
 
-cp -p "$scrsrc" "$script"
+# If script already exists and is identical, skip copy
+if [ ! -e "$script" ] || ! cmp -s "$scrsrc" "$script"; then
+    cp -p "$scrsrc" "$script"
+fi
 
-# Substantially based on https://stackoverflow.com/a/22872222/874188
+# Originally based on https://stackoverflow.com/a/22872222/874188;
+# updated for MacOS Seqoia
 cat <<: >"$plist"
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>macos-login-hook.login.d</string>
+    <string>com.local.loginhook</string>
     <key>ProgramArguments</key>
     <array>
         <string>$script</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
+    <key>KeepAlive</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>$HOME/.loginhook.log</string>
+    <key>StandardErrorPath</key>
+    <string>$HOME/.loginhook.log</string>
 </dict>
 </plist>
 :
 
-launchctl load "$plist"
+# Modern launchctl bootstrap replaces old launchctl load
+id=$(id -u)
+launchctl bootstrap gui/"$id" "$plist"
 
 cp -p env ssh-add ~/.login.d/
 
-./loginhook
+launchctl kickstart gui/"$id"/com.local.loginhook
