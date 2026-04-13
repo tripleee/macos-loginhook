@@ -14,20 +14,32 @@ die () {
 
 plistdir=~/Library/LaunchAgents
 plist="$plistdir"/com.local.loginhook.plist
+session_plist="$plistdir"/com.local.session-daemon.plist
 
 bindir=~/bin
 
-mkdir -p ~/.login.d "$plistdir" "$bindir"
+mkdir -p ~/.login.d ~/.session.d "$plistdir" "$bindir"
 
 test -e "$plist" && die 2 "$plist exists, not overwriting"
+test -e "$session_plist" && \
+    die 3 "$session_plist exists, not overwriting"
 
 script="$bindir"/loginhook
 scrsrc=./loginhook
-test -x "$scrsrc" || die 3 "$scrsrc is not executable, aborting"
+test -x "$scrsrc" || die 4 "$scrsrc is not executable, aborting"
+
+session_script="$bindir"/session-daemon
+scrsrc_session=./session-daemon
+test -x "$scrsrc_session" || \
+    die 5 "$scrsrc_session is not executable, aborting"
 
 # If script already exists and is identical, skip copy
 if [ ! -e "$script" ] || ! cmp -s "$scrsrc" "$script"; then
     cp -p "$scrsrc" "$script"
+fi
+if [ ! -e "$session_script" ] ||
+        ! cmp -s "$scrsrc_session" "$session_script"; then
+    cp -p "$scrsrc_session" "$session_script"
 fi
 
 # Originally based on https://stackoverflow.com/a/22872222/874188;
@@ -48,6 +60,8 @@ cat <<: >"$plist"
     <true/>
     <key>KeepAlive</key>
     <false/>
+    <key>AbandonProcessGroup</key>
+    <true/>
     <key>StandardOutPath</key>
     <string>$HOME/.loginhook.log</string>
     <key>StandardErrorPath</key>
@@ -60,6 +74,33 @@ cat <<: >"$plist"
 id=$(id -u)
 launchctl bootstrap gui/"$id" "$plist"
 
+cat <<: >"$session_plist"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.local.session-daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$session_script</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>$HOME/.session-daemon.log</string>
+    <key>StandardErrorPath</key>
+    <string>$HOME/.session-daemon.log</string>
+</dict>
+</plist>
+:
+
+launchctl bootstrap gui/"$id" "$session_plist"
+
 cp -p env ssh-add ~/.login.d/
 
 launchctl kickstart gui/"$id"/com.local.loginhook
+launchctl kickstart gui/"$id"/com.local.session-daemon

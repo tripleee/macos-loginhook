@@ -1,0 +1,52 @@
+#!/opt/homebrew/bin/bash
+# session-daemon: start and monitor long-running session
+# processes from ~/.session.d/, restarting any that exit.
+# Install as a KeepAlive LaunchAgent; see install script.
+
+exec >>~/.session-daemon.log 2>&1
+date +"$0: started at %c"
+
+if [[ ! -d ~/.session.d ]]; then
+    echo "No ~/.session.d directory; sleeping"
+    exec sleep infinity
+fi
+
+declare -A pid_to_script
+
+start() {
+    local script=$1
+    "$script" &
+    local pid=$!
+    pid_to_script[$pid]=$script
+    printf '%s: started %s (pid %d)\n' \
+        "$(date +%T)" "$script" "$pid"
+}
+
+count=0
+for script in ~/.session.d/*; do
+    [[ $script == *~ ]] && continue
+    [[ -f $script && -x $script ]] || {
+        printf '%s: skipping %s (not executable)\n' \
+            "$(date +%T)" "$script"
+        continue
+    }
+    start "$script"
+    (( count++ )) || true
+done
+
+if (( count == 0 )); then
+    echo "No session scripts to run; sleeping"
+    exec sleep infinity
+fi
+
+while true; do
+    sleep 30
+    for pid in "${!pid_to_script[@]}"; do
+        kill -0 "$pid" 2>/dev/null && continue
+        script=${pid_to_script[$pid]}
+        printf '%s: %s (pid %d) exited, restarting\n' \
+            "$(date +%T)" "$script" "$pid"
+        unset "pid_to_script[$pid]"
+        start "$script"
+    done
+done
