@@ -100,7 +100,8 @@ cat <<: >"$session_plist"
 
 launchctl bootstrap gui/"$id" "$session_plist"
 
-cp -p env ssh-add ~/.login.d/
+cp -p env ~/.login.d/
+cp -p ssh-add ~/.session.d/
 
 launchctl kickstart gui/"$id"/com.local.loginhook
 launchctl kickstart gui/"$id"/com.local.session-daemon

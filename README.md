@@ -23,10 +23,8 @@ to add your local `bin` directories to `/etc/paths.d/`
 ## `~/.login.d` vs `~/.session.d`
 
 `~/.login.d` scripts are sourced once, in sequence, at login.
-They are meant for quick, one-shot setup tasks.
-If a script needs to keep running, background itself
-(see `ssh-add` for an example of backgrounding a bounded
-retry loop) so it does not block the rest of `~/.login.d`.
+They are meant for quick, one-shot setup tasks that run to
+completion without needing to retry or persist.
 
 `~/.session.d` scripts are handed to `session-daemon`,
 a separate `launchd` agent that starts each script and
@@ -34,11 +32,15 @@ restarts it whenever it exits.
 This fits scripts that should keep running for the whole
 session (a periodic reminder, a VPN watcher).
 It also fits a one-shot job that needs to wait on a slow
-dependency (e.g. a container runtime) becoming available:
-have the script retry until ready, launch its job, then
-block (e.g. `podman wait`) so the script's own lifetime
+dependency becoming available (a container runtime, the
+login keychain): have the script retry until ready, do its
+job, then block (e.g. `podman wait`, or `sleep infinity` if
+there is nothing to wait on) so the script's own lifetime
 tracks the job's; `session-daemon` will then restart the
-whole sequence if the job ever dies.
+whole sequence if the job ever dies or a retry round gives
+up. See `ssh-add` for an example: it retries loading SSH
+keys from the keychain, then blocks once an identity is
+added.
 
 Do not drop a bare one-shot script (one that exits right
 after kicking something off) into `~/.session.d`:

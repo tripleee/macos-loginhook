@@ -4,23 +4,22 @@
 # Before this can work, you need to run this command just once:
 # ssh-add --apple-use-keychain /path/to/your/private_key
 #
-# Sourced by loginhook at login time, when the user's keychain
-# may not yet be unlocked. Background a retry loop so the
-# loginhook isn't blocked, and keep polling until ssh-add
-# reports an identity loaded (or we give up).
+# Run by session-daemon (~/.session.d/), since the keychain may
+# still be locked for a while after login. Retry loading keys
+# until an identity is added, then block so session-daemon
+# leaves us alone; giving up after a round of attempts makes us
+# exit, so session-daemon restarts us for another round in 30s.
 
-(
-    n=0
-    max=30
-    while [ "$n" -lt "$max" ]; do
-        out=$(ssh-add --apple-load-keychain 2>&1)
-        printf '%s\n' "$out"
-        case $out in
-            *'Identity added'*) exit 0 ;;
-        esac
-        n=$((n + 1))
-        sleep 2
-    done
-    echo "ssh-add: no identity loaded after $n attempts" >&2
-    exit 1
-) &
+n=0
+max=30
+while [ "$n" -lt "$max" ]; do
+    out=$(ssh-add --apple-load-keychain 2>&1)
+    [ -n "$out" ] && printf '%s\n' "$out"
+    case $out in
+        *'Identity added'*) exec sleep infinity ;;
+    esac
+    n=$((n + 1))
+    sleep 2
+done
+echo "ssh-add: no identity loaded after $n attempts, giving up" >&2
+exit 1
