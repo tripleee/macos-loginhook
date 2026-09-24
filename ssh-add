@@ -16,7 +16,7 @@ while [ "$n" -lt "$max" ]; do
     out=$(ssh-add --apple-load-keychain 2>&1)
     [ -n "$out" ] && printf '%s\n' "$out"
     case $out in
-        *'Identity added'*) exec sleep infinity ;;
+        *'Identity added'*) exec sleep 2147483647 ;;
     esac
     n=$((n + 1))
     sleep 2

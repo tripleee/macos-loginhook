@@ -8,7 +8,7 @@ date +"$0: started at %c"
 
 if [[ ! -d ~/.session.d ]]; then
     echo "No ~/.session.d directory; sleeping"
-    exec sleep infinity
+    exec sleep 2147483647
 fi
 
 declare -A pid_to_script
@@ -36,7 +36,7 @@ done
 
 if (( count == 0 )); then
     echo "No session scripts to run; sleeping"
-    exec sleep infinity
+    exec sleep 2147483647
 fi
 
 while true; do

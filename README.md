@@ -34,8 +34,8 @@ session (a periodic reminder, a VPN watcher).
 It also fits a one-shot job that needs to wait on a slow
 dependency becoming available (a container runtime, the
 login keychain): have the script retry until ready, do its
-job, then block (e.g. `podman wait`, or `sleep infinity` if
-there is nothing to wait on) so the script's own lifetime
+job, then block (e.g. `podman wait`, or `sleep 2147483647`
+if there is nothing to wait on) so the script's own lifetime
 tracks the job's; `session-daemon` will then restart the
 whole sequence if the job ever dies or a retry round gives
 up. See `ssh-add` for an example: it retries loading SSH
